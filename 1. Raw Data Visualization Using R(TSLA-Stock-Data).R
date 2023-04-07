@@ -165,3 +165,76 @@ TSLA2 %>%
   theme(text = element_text(size = 15, face = "bold"),
         axis.text.x = element_text(angle = 90))+
   facet_wrap(~variable)
+
+#3. 시계열 분해
+
+Decomposition = function(x){
+  
+  TS_X = ts(x, frequency = 365)
+  
+  Add = decompose(TS_X, type = "additive")
+  Multi = decompose(TS_X, type = "multiplicative")
+  
+  Result = list()
+  Result$Add = Add
+  Result$Multi = Multi
+  
+  return(Result)
+}
+
+TD = Decomposition(x = TSLA$Open)
+
+#Additive
+autoplot(TD$Add)+
+  theme_bw()+
+  theme(text = element_text(size = 15, face = "bold"))
+
+#Multi
+autoplot(TD$Multi)+
+  theme_bw()+
+  theme(text = element_text(size = 15, face = "bold"))
+
+#4. Waterfall Chart
+
+Difference = function(x){
+  
+  Diff_Vector = c()
+  Diff_Vector[1] = 0
+  
+  for(k in 2:length(x)){
+    
+    Diff = x[k] - x[k-1]
+    
+    Diff_Vector[k] = Diff
+  }
+  
+  return(Diff_Vector)
+  
+}
+
+Open_Diff = Difference(x = TSLA$Open)
+
+WATER = data.frame(
+  DATE = TSLA$Date,
+  Open = Open_Diff
+)
+
+WATER$Increase = ifelse(WATER$Open >= 0, "Plus", "Minus")
+
+WATER %>%
+  mutate(Increase = factor(Increase, levels = c("Plus", "Minus"))) %>%
+  ggplot() + 
+  geom_bar(aes(x = DATE, y = Open, fill = Increase), stat = 'identity')+
+  scale_fill_manual(values = c("red","royalblue"))+
+  theme_bw()+
+  theme(text = element_text(size = 15, face = "bold"),
+        legend.position = "bottom")
+
+WATER[(nrow(WATER)-100):nrow(WATER),] %>%
+  mutate(Increase = factor(Increase, levels = c("Plus", "Minus"))) %>%
+  ggplot() +
+  geom_bar(aes(x = DATE, y = Open, fill = Increase), stat = 'identity')+
+  scale_fill_manual(values = c("red","royalblue")) +
+  theme_bw()+
+  theme(text = element_text(size = 15, face = "bold"),
+        legend.position = "bottom")
